@@ -15,6 +15,7 @@
 """GRPO training entrypoint for custom environments.
 
     python train.py --env simple                            # Tier A, inline, no server
+    python train.py --env word_unscramble                   # Tier A, inline, no server
     python train.py --env agent_tools --vllm-mode colocate  # Tier B, sandbox server must be up
     python train.py --env browsergym                        # BrowserGym MiniWoB++ (Nanthasit Space)
     python train.py --env browsergym --browsergym-task email-inbox  # harder task
@@ -99,6 +100,9 @@ def _select(args: argparse.Namespace):
     if args.env == "simple":
         from env_simple_task import (DEFAULT_MODEL, ENVIRONMENT_FACTORY,
                                      REWARD_FUNCS, TRAIN_DATASET)
+    elif args.env == "word_unscramble":
+        from env_word_unscramble import (DEFAULT_MODEL, ENVIRONMENT_FACTORY,
+                                         REWARD_FUNCS, TRAIN_DATASET)
     elif args.env == "agent_tools":
         from agent_tools.wrapper import (DEFAULT_MODEL, ENVIRONMENT_FACTORY,
                                          REWARD_FUNCS, TRAIN_DATASET)
@@ -111,17 +115,18 @@ def _select(args: argparse.Namespace):
         DEFAULT_MODEL = BROWSERGYM_DEFAULT_MODEL
     else:
         raise SystemExit(
-            f"unknown --env {args.env!r}; choose 'simple', 'agent_tools', or 'browsergym'"
+            f"unknown --env {args.env!r}; choose 'simple', 'word_unscramble', "
+            f"'agent_tools', or 'browsergym'"
         )
     return ENVIRONMENT_FACTORY, REWARD_FUNCS, TRAIN_DATASET, DEFAULT_MODEL
 
 
-def parse_args():
+def main():
     env_default = os.environ.get("TRAIN_ENV")
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--env",
-        choices=["simple", "agent_tools", "browsergym"],
+        choices=["simple", "word_unscramble", "agent_tools", "browsergym"],
         default=env_default,
         required=(env_default is None),
     )
@@ -185,11 +190,7 @@ def parse_args():
         default=os.environ.get("TRAIN_PUSH_TO"),
         help="repo id to push the trained model to (optional). Env: TRAIN_PUSH_TO",
     )
-    return parser.parse_args()
-
-
-def main():
-    args = parse_args()
+    args = parser.parse_args()
 
     factory, rewards, dataset_builder, default_model = _select(args)
     model = args.model or default_model

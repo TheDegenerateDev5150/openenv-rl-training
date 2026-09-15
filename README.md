@@ -7,6 +7,15 @@
 [![🔎 OSSAR](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/ossar.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/ossar.yml)
 [![📦 Dependency Review](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/dependency-review.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/dependency-review.yml)
 [![🧹 Stale](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/stale.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/stale.yml)
+[![🔄 Auto Merge](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/auto-merge.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/auto-merge.yml)
+[![⬆️ Auto Update PRs](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/auto-update-prs.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/auto-update-prs.yml)
+[![📊 Eval](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/eval.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/eval.yml)
+[![⚡ Lighteval](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/lighteval.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/lighteval.yml)
+[![✋ Manual](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/manual.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/manual.yml)
+[![⚖️ MCP Bench](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/mcp-bench.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/mcp-bench.yml)
+[![👀 Monitor](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/monitor.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/monitor.yml)
+[![📝 Summary](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/summary.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/summary.yml)
+[![🚂 Train](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/train.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/train.yml)
 
 [![📜 License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![🐍 Python 3.10+](https://img.shields.io/badge/python-3.10%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
@@ -17,6 +26,16 @@
 [![🔀 Pull Requests](https://img.shields.io/github/issues-pr/beer-sakthai/openenv-rl-training?label=PRs&logo=github)](https://github.com/beer-sakthai/openenv-rl-training/pulls)
 [![⭐ Stars](https://img.shields.io/github/stars/beer-sakthai/openenv-rl-training?style=flat&logo=github)](https://github.com/beer-sakthai/openenv-rl-training/stargazers)
 [![📅 Last commit](https://img.shields.io/github/last-commit/beer-sakthai/openenv-rl-training/main?logo=git&logoColor=white)](https://github.com/beer-sakthai/openenv-rl-training/commits/main)
+
+> ## 📊 Live status — 2026-09-07
+>
+> | Area | Status | Current evidence |
+> |---|---|---|
+> | 🧪 **Contracts and security CI** | 🟢 Passing | Verify Contracts, CodeQL Advanced, OSSAR, and Auto Update PR Branches passed on `main` after the latest merge. |
+> | 🤗 **HF authentication** | 🟢 Fixed and runner-tested | Lighteval authenticated successfully with `HF_TOKEN`; the remaining failure is HF Jobs billing, not login. |
+> | 💰 **HF Jobs evaluation** | 🟡 Credit blocked | Lighteval reached Hugging Face and returned `402 Payment Required` because prepaid Jobs credit is insufficient. |
+> | 🌿 **Branch state** | 🟡 Cleanup pending | `main` is the integration branch; a pre-existing `improve/push-all-to-hub` branch remains until the requested cleanup merge. |
+> | 🔀 **Open pull requests** | 🟢 Zero | No open pull requests are currently reported. |
 
 ### 🤗 Model & dataset badges
 
@@ -70,7 +89,7 @@ environments (custom or catalog), and pushes a merged bf16 checkpoint back to th
 📄 [`sakthai-agentic-eval-train/FINDINGS.md`](sakthai-agentic-eval-train/FINDINGS.md) is
 the single source of truth for what has actually worked.
 
-## 📊 Status — 2026-08-22
+## 📊 Status — 2026-09-07
 
 ### 🟢 Repository hygiene
 
@@ -109,8 +128,9 @@ the single source of truth for what has actually worked.
 ### 🟡 Known open items (see `CLAUDE.md`)
 
 - 💰 **HF Jobs currently returns `402 Payment Required`** on this account —
-  the five HF-Jobs workflows will fail until this is resolved and `HF_TOKEN`
-  is added as a repo secret. `verify-contracts.yml` runs regardless.
+  authentication now succeeds, but the five HF-Jobs workflows remain blocked until
+  sufficient prepaid Hugging Face Jobs credit is available. `verify-contracts.yml`
+  and the other free CI workflows run regardless.
 - 🧪 **`coding_env` task placeholder** in both `train_multi_env.py` and
   `a2a_agent/` — substring-check for `print(17 * 23)`.
 - 🐳 **Catalog Docker image tags in `run_servers.sh`** — none verified live.
@@ -172,6 +192,21 @@ installed by design; do **not** attempt to run training here.
 
 The HF-Jobs workflows require `HF_TOKEN` as a repo secret + a paid HF Jobs plan.
 `train.yml` is `workflow_dispatch`-only to avoid unintentional GPU spend.
+
+## 🔗 Related repositories
+
+Three repos under [`beer-sakthai`](https://github.com/beer-sakthai) make up the SakThai
+family. This one owns the **training and evaluation** pipeline; it ships no agent runtime.
+
+| Repository | What it is | How it connects here |
+|---|---|---|
+| [`openenv-rl-training`](https://github.com/beer-sakthai/openenv-rl-training) | **This repo.** SFT (QLoRA on Qwen2.5 for tool-calling), GRPO over OpenEnv environments via TRL's `environment_factory`, the agentic-eval harness, and [`sakthai-agentic-eval-train/FINDINGS.md`](sakthai-agentic-eval-train/FINDINGS.md). | — |
+| [`Sak-Family-Agent`](https://github.com/beer-sakthai/Sak-Family-Agent) | The runtime that consumes what this repo produces: the `sakthai` package, six personas, a persistent SQLite memory store, an MCP stdio server, and a web API. | Its `training/sakthai-7b-lora/train.py` pushes [`Nanthasit/sakthai-context-7b-tools`](https://huggingface.co/Nanthasit/sakthai-context-7b-tools) — the adapter this repo GRPO-trains further, and the one `FINDINGS.md` identifies as the only viable GRPO target in the family. The two repos share **no code** and pin deliberately incompatible dependency sets; keep them separate. |
+| [`codeql-action`](https://github.com/beer-sakthai/codeql-action) | A fork of [`github/codeql-action`](https://github.com/github/codeql-action) carrying local dependency-advisory remediation against the action's own dev-dependency tree. | [`codeql.yml`](.github/workflows/codeql.yml) here pins **upstream** `github/codeql-action`, not the fork. |
+
+Shared Hub assets — models, datasets, and the BrowserGym Space — live under
+[`Nanthasit`](https://huggingface.co/Nanthasit); the badges at the top of this README
+link the ones this repo produces or consumes.
 
 ## 📜 License
 
