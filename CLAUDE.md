@@ -69,7 +69,7 @@ Two sibling repos under `beer-sakthai`. Know which one owns what before you go l
 | `openenv-custom-training/` | **RL — custom environments.** Tier A (`env_simple_task.py`, inline plain Python), Tier B (`agent_tools/`, sandboxed OpenEnv server in Docker), and BrowserGym MiniWoB++ (`train.py --env browsergym`). Runners: `train.py` (single env), `multi_env.py` (TRL-native dict-form multi-env). |
 | `openenv-multi-catalog-training/` | **RL — catalog run.** One ~0.6B model across all 8 `openenv/*` catalog envs (echo, sudoku, coding, chat, atari, openspiel, repl, sumo) in one GRPO run via a meta-environment class. `a2a_agent/` exposes the same 8 envs as [A2A protocol](https://a2a-protocol.org/) skills, independent of training. |
 | `sakthai-agentic-eval-train/` | **The RL eval + train pipeline that actually ran.** As-run HF Jobs scripts (bench eval, agentic eval, SFT bootstrap, GRPO pilot), a self-contained Colab/Kaggle notebook, and `FINDINGS.md` — the durable empirical record. |
-| `browsergym-space/` | Dockerfile + Space card for the BrowserGym OpenEnv server deployed at [`Nanthasit/browsergym-env`](https://huggingface.co/spaces/Nanthasit/browsergym-env) (`https://nanthasit-browsergym-env.hf.space`). |
+| `browsergym-space/` | Dockerfile + Space card for a BrowserGym OpenEnv server. **Not deployed** — `Nanthasit/browsergym-env` no longer exists (404, verified 2026-09-16). `train.py --env browsergym` defaults to upstream [`openenv/browsergym_env`](https://huggingface.co/spaces/openenv/browsergym_env); redeploy from here and pass `--browsergym-url` to use your own. |
 | `.github/workflows/` | `verify-contracts.yml` (ruff + 38 CPU tests, runs in GH Actions); `train.yml`/`eval.yml`/`lighteval.yml`/`mcp-bench.yml` (dispatch to HF Jobs); `monitor.yml` (Hub API → job summary). |
 | `.opencode/` | 25 slash-command specs (`command/hf-*.md`) + 35 workflow skills (`skills/*/SKILL.md`) — prompt library for the whole pipeline. Path-agnostic; no code depends on it. |
 | `docs/HF_HUB_IMPROVEMENTS.md`, `SECURITY.md` | 2026-07-30 Hub audit; token-hygiene checklist. |
@@ -139,7 +139,10 @@ gap-fill variant used to build `gap-fill-v8/v8-gap-fill.jsonl` (478 rows).
 ### Datasets on the Hub, not in the repo
 
 Except for `gap-fill-v8/v8-gap-fill.jsonl` (kept inline for reproducibility), all training
-corpora live on the Hub — `Nanthasit/sakthai-combined-v{6..12}` (~2.4k → ~5k rows) and
+corpora live on the Hub — `Nanthasit/sakthai-combined-v6`, `v7`, `v10` and `v12`
+(~2.4k → ~5k rows; **v8, v9 and v11 were never pushed** — `hf stat` reports all
+three missing as of 2026-09-16, and `train-sakthai-1.5b-v2.py` loads v8, so that
+script cannot run until it is created or repointed) and
 `Nanthasit/sakthai-bench-v{1..3}` (155 balanced rows in v3). Do not check dataset payloads
 into the repo. The runtime pin dataset `Nanthasit/sakthai-openenv-training` is the source
 of truth for cross-half version compatibility.
@@ -384,17 +387,26 @@ The prose in this repo is unusually careful, and that is deliberate. Match it:
   published SDK pattern, not a live install.
 - The 7B GRPO proof-of-signal run was 40 steps — long enough to show a gradient exists, not
   long enough to improve the model. A real run needs hundreds of steps.
-- HF Jobs currently returns `402 Payment Required` on this account (per the 2026-08-03
-  observation); the four HF-Jobs workflows in `.github/workflows/` will fail until this
-  is resolved and `HF_TOKEN` is added as a repo secret. `verify-contracts.yml` runs regardless.
+- HF Jobs returns `402 Payment Required` on this account. **Credit is the only blocker** —
+  `HF_TOKEN` IS configured as a repo secret and valid: the 2026-09-14 `lighteval` run logs
+  `Token is valid (permission: write)` and `Login successful`, then fails with
+  `402 ... Pre-paid credit balance is insufficient`. The four HF-Jobs workflows fail until
+  credit is added. `verify-contracts.yml` and `hf-no-cost-checks.yml` run regardless.
 - `--env browsergym`'s wrapper (`_BrowserGymTaskEnv` in `openenv-custom-training/train.py`)
-  is **written, not run**. The OpenEnv `EnvClient` surface it uses is the documented one,
-  but `BrowserGymAction(action=...)` and the observation text field were inferred, not
-  checked against an installed `browsergym_env`. Confirm both before a long run.
+  is **written, not run**. `BrowserGymAction(action=...)` and the observation text field
+  were inferred, not checked against an installed `browsergym_env`. Confirm both before a
+  long run. The server it points at is now upstream `openenv/browsergym_env` (its OpenEnv
+  routes verified 2026-09-16); `Nanthasit/browsergym-env` was deleted at some point and
+  returns 404, so `browsergym-space/` is a redeploy recipe, not a live deployment.
 - Dataset payloads are committed under `augmented-output/` (~1 MB) and
   `safety-quality-fixes/`, against the "datasets live on the Hub, not in the repo" rule
   below. `augmented-output/push-augmented.py` reads `all-augmented.jsonl` from there, so
   removing them is not a pure deletion — it needs that script repointed at the Hub first.
+- `sakthai-combined-v8`, `v9` and `v11` do not exist on the Hub (verified 2026-09-16).
+  `push-all-to-hub.py` (v8) could not have created it — it failed to parse until
+  2026-09-16 — and `push-v9-comprehensive.py` (v9) was evidently never run either.
+  `train-sakthai-1.5b-v2.py:88` loads v8, so `train.yml` submits a job that fails on a
+  missing dataset; push v8 or repoint that line before spending credit on it.
 - ~115 ruff style findings (F541 / F401 / F841) remain unaddressed, concentrated in
   `sakthai-sft-training/`. They are out of the lint gate on purpose; see the `.ruff.toml`
   header before widening it.

@@ -43,7 +43,6 @@
 [![🧠 sakthai-context-0.5b-tools](https://img.shields.io/badge/🤗_model-sakthai--context--0.5b--tools-orange)](https://huggingface.co/Nanthasit/sakthai-context-0.5b-tools)
 [![🧠 sakthai-context-1.5b-tools](https://img.shields.io/badge/🤗_model-sakthai--context--1.5b--tools-orange)](https://huggingface.co/Nanthasit/sakthai-context-1.5b-tools)
 [![🧠 sakthai-context-7b-tools](https://img.shields.io/badge/🤗_model-sakthai--context--7b--tools-orange)](https://huggingface.co/Nanthasit/sakthai-context-7b-tools)
-[![🌐 browsergym-env](https://img.shields.io/badge/🤗_space-browsergym--env-blue)](https://huggingface.co/spaces/Nanthasit/browsergym-env)
 [![📊 sakthai-combined-v12](https://img.shields.io/badge/🤗_dataset-sakthai--combined--v12-green)](https://huggingface.co/datasets/Nanthasit/sakthai-combined-v12)
 [![📊 sakthai-bench-v3](https://img.shields.io/badge/🤗_dataset-sakthai--bench--v3-green)](https://huggingface.co/datasets/Nanthasit/sakthai-bench-v3)
 
@@ -67,7 +66,7 @@ state — see [`docs/branch-cleanup-2026-08-22.md`](docs/branch-cleanup-2026-08-
 | 🎯 [`openenv-custom-training/`](openenv-custom-training/) | **RL — custom environments.** Tier A (inline plain-Python logic, no server), Tier B (sandboxed OpenEnv server), and **BrowserGym MiniWoB++** (`--env browsergym`), plus `train.py` (single-env) and `multi_env.py` (TRL-native dict-form multi-env) runners. Default base: `Nanthasit/sakthai-context-7b-tools`. |
 | 🎮 [`openenv-multi-catalog-training/`](openenv-multi-catalog-training/) | **RL — catalog run.** Trains one small model across all 8 `openenv/*` catalog environments (echo, sudoku, coding, chat, atari, openspiel, repl, sumo) in a single GRPO run via the multi-environment pattern. |
 | 🧪 [`sakthai-agentic-eval-train/`](sakthai-agentic-eval-train/) | **The eval + train pipeline that actually ran.** As-run HF Jobs scripts + `sakthai_grpo_colab.ipynb` + `FINDINGS.md` (the durable empirical record — read this before re-litigating model choice). |
-| 🌐 [`browsergym-space/`](browsergym-space/) | **BrowserGym OpenEnv Server** — deployed live on Hugging Face Spaces at [`Nanthasit/browsergym-env`](https://huggingface.co/spaces/Nanthasit/browsergym-env) (`https://nanthasit-browsergym-env.hf.space`). |
+| 🌐 [`browsergym-space/`](browsergym-space/) | **BrowserGym OpenEnv Server** — Dockerfile + Space card. ⚠️ **Not currently deployed:** `Nanthasit/browsergym-env` no longer exists (404 on `/` and `/health`, verified 2026-09-16). `train.py --env browsergym` defaults to the upstream [`openenv/browsergym_env`](https://huggingface.co/spaces/openenv/browsergym_env) instead; redeploy from this directory and pass `--browsergym-url` to use your own. |
 | 📖 [`docs/`](docs/) | Repo audit & policy docs — 2026-07-30 Hub audit, `SECURITY.md`, and the 2026-08-22 branch-cleanup record. |
 | ⚙️ [`.github/workflows/`](.github/workflows/) | 14 GitHub Actions workflows — CI (`verify-contracts`), security (`codeql`, `ossar`, `dependency-review`), hygiene (`stale`, `summary`), and 5 HF-Jobs dispatchers (`train`, `eval`, `lighteval`, `mcp-bench`, `monitor`). |
 | 🤖 [`.opencode/`](.opencode/) | 25 slash-command specs + 35 workflow skills — a path-agnostic prompt library, no code depends on it. |
@@ -122,10 +121,15 @@ the single source of truth for what has actually worked.
 
 ### 🟢 Deployed assets
 
-- 🌐 **BrowserGym OpenEnv Server (`browsergym-space/`)** — live at
-  [`Nanthasit/browsergym-env`](https://huggingface.co/spaces/Nanthasit/browsergym-env).
-  Serves Gymnasium-compatible web-navigation tasks (MiniWoB++ click, form-fill,
-  navigation).
+- ⚠️ **BrowserGym OpenEnv Server (`browsergym-space/`)** — **not deployed.**
+  `Nanthasit/browsergym-env` no longer exists: `hf stat` reports it missing and
+  both `/` and `/health` on `nanthasit-browsergym-env.hf.space` return 404
+  (verified twice, 2026-09-16). The Dockerfile and Space card in that directory
+  are intact, so it can be redeployed. Until then `train.py --env browsergym`
+  defaults to the upstream
+  [`openenv/browsergym_env`](https://huggingface.co/spaces/openenv/browsergym_env),
+  whose OpenEnv surface (`/reset`, `/step`, `/state`, `/schema`) was verified
+  the same day.
 - 🎯 **`train.py --env browsergym`** — BrowserGym environment factory & reward
   extraction integrated in `openenv-custom-training/train.py`.
 - 🧠 **Target model (`Nanthasit/sakthai-context-7b-tools`)** — the primary viable

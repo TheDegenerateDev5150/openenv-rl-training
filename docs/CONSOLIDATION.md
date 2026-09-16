@@ -163,6 +163,11 @@ Live inventory taken 2026-08-21 (via HF API): **19 models, 19 datasets, 1 privat
 - Models: `sakthai-context-{0.5b,1.5b,7b}-tools` / `-merged` (+`-v2`), `sakthai-coder-*`, `sakthai-vision-7b`, `sakthai-tts-model`, `sakthai-embedding-multilingual`.
 - Datasets: `sakthai-combined-v{6,7,10,12}`, `sakthai-bench-v{1,2,3}`, `eval_results`, `sakthai-openenv-training` (version pin), `hermes-tool-use-rl-env`.
 - Space: `Nanthasit/browsergym-env` (BrowserGym server, live).
+  - **Update 2026-09-16:** this Space no longer exists — `hf stat` reports it missing
+    and both `/` and `/health` return 404. The 2026-08-21 inventory above is left as
+    recorded; `train.py --env browsergym` now defaults to upstream
+    `openenv/browsergym_env`. Note this section's dataset list was already correct:
+    `v{6,7,10,12}`, i.e. v8/v9/v11 did not exist on that date either.
 
 ### Tools/skills worth adding to this repo (pick per agent CLI)
 | Skill / tool | Why it fits | Where it lives |

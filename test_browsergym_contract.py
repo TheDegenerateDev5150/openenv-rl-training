@@ -146,4 +146,11 @@ def test_run_action_rejects_calls_after_the_episode_ended():
 
 
 def test_browsergym_space_url_const():
-    assert "nanthasit-browsergym-env.hf.space" in BROWSERGYM_SPACE_URL
+    """The default must not point at the dead Nanthasit Space.
+
+    `Nanthasit/browsergym-env` was removed; both `/` and `/health` on
+    nanthasit-browsergym-env.hf.space return 404. The default is the upstream
+    catalog Space, whose OpenEnv surface was verified on 2026-09-16.
+    """
+    assert "openenv-browsergym-env.hf.space" in BROWSERGYM_SPACE_URL
+    assert "nanthasit" not in BROWSERGYM_SPACE_URL.lower()

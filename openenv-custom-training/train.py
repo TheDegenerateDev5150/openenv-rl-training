@@ -26,8 +26,8 @@ vars into CLI args at submit time.
 Model is configurable (--model) - defaults are task-appropriate. See README.md
 for model-size guidance and the whole-episode max_completion_length caveat.
 
-BrowserGym Space: https://huggingface.co/spaces/Nanthasit/browsergym-env
-BrowserGym URL:   https://nanthasit-browsergym-env.hf.space
+BrowserGym Space: https://huggingface.co/spaces/openenv/browsergym_env
+BrowserGym URL:   https://openenv-browsergym-env.hf.space
 """
 
 import argparse
@@ -36,8 +36,16 @@ import os
 from datasets import Dataset
 from trl import GRPOConfig, GRPOTrainer
 
-# Default BrowserGym Space URL (Nanthasit-owned)
-BROWSERGYM_SPACE_URL = "https://nanthasit-browsergym-env.hf.space"
+# The upstream OpenEnv catalog Space. Verified 2026-09-16: `/health` returns
+# {"status":"healthy"} and `/openapi.json` lists the OpenEnv surface
+# (/reset, /step, /state, /schema, /metadata).
+#
+# This used to default to `Nanthasit/browsergym-env`, which NO LONGER EXISTS —
+# `hf stat` reports it missing and both `/` and `/health` on
+# nanthasit-browsergym-env.hf.space return 404 (checked twice on 2026-09-16).
+# If you redeploy it from `browsergym-space/`, point `--browsergym-url` (or
+# TRAIN_BROWSERGYM_URL) back at your own Space.
+BROWSERGYM_SPACE_URL = "https://openenv-browsergym-env.hf.space"
 
 
 def _bool_env(name: str, default: bool = False) -> bool:
@@ -86,15 +94,25 @@ class _BrowserGymTaskEnv:
     the per-run task name and Space URL arrive without `__init__` taking
     arguments — TRL calls the factory with none.
 
-    **Written, not run.** The Space at `Nanthasit/browsergym-env` is live, but
-    this wrapper has not been executed against it (no GPU/network in the
-    checkout where it was written). The client surface used here — `.reset()` /
-    `.step()` returning a `StepResult` with `.observation`, `.reward`, `.done`
-    — is the OpenEnv `EnvClient` contract that `agent_tools/client.py`
-    documents and that the Space card's "POST /step — returns observation +
-    reward" implies. The BrowserGym *action* type is the unverified part:
-    `BrowserGymAction(action=...)` is assumed below. Diff it against the
-    installed `browsergym_env` package before spending GPU time.
+    **Written, not run.** This wrapper has not been executed against any
+    BrowserGym server (no GPU in the checkout where it was written).
+
+    An earlier revision of this docstring claimed the Space at
+    `Nanthasit/browsergym-env` was live. It is not, and was not then: that
+    Space does not exist, and both `/` and `/health` on
+    nanthasit-browsergym-env.hf.space return 404. The claim was carried over
+    from README.md rather than checked. The default now points at the upstream
+    catalog Space, whose OpenEnv surface was verified on 2026-09-16 (see
+    BROWSERGYM_SPACE_URL above).
+
+    The client surface used here — `.reset()` / `.step()` returning a
+    `StepResult` with `.observation`, `.reward`, `.done` — is the OpenEnv
+    `EnvClient` contract that `agent_tools/client.py` documents, and
+    `/openapi.json` on the upstream Space confirms the matching `/reset` and
+    `/step` routes exist. The BrowserGym *action* type remains the unverified
+    part: `BrowserGymAction(action=...)` is assumed below, as is the
+    observation text field. Diff both against the installed `browsergym_env`
+    package before spending GPU time.
     """
 
     def __init__(self, task_name: str, space_url: str):
