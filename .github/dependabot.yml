@@ -5,9 +5,10 @@
 
 version: 2
 updates:
-  # Python dependencies (requirements.txt / setup.py / pyproject.toml)
+  # Root requirements.txt is the CPU dev/test toolchain only (see its header);
+  # the runtime pins live in the per-workspace files listed below.
   - package-ecosystem: "pip"
-    directory: "/"                 # root: adjust or add extra entries for subfolders below
+    directory: "/"
     schedule:
       interval: "weekly"           # "daily" is noisy; use "weekly" or "monthly" unless you want daily
     open-pull-requests-limit: 5
@@ -34,8 +35,12 @@ updates:
     labels:
       - "dependencies"
 
+  # NOTE: no entry for /sakthai-agentic-eval-train or /sakthai-sft-training —
+  # neither has a requirements.txt. Their scripts declare dependencies in PEP
+  # 723 inline headers, which Dependabot does not parse, so an entry there is
+  # silently a no-op rather than an error.
   - package-ecosystem: "pip"
-    directory: "/sakthai-agentic-eval-train"
+    directory: "/openenv-multi-catalog-training/a2a_agent"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
