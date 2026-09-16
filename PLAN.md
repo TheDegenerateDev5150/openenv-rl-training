@@ -57,7 +57,7 @@ for the full analysis (what / how / time / cost / suggestions).
 
 ### Phase 5 — Improvements (drive from evaluation results)
 
-- [ ] Add `HF_TOKEN` (and `STEP_SECURITY_API_KEY` referenced by `eval.yml`) as repo secrets — unblocks the 5 HF-Jobs workflows. **User action:** `gh secret set HF_TOKEN --repo beer-sakthai/openenv-rl-training` (and `STEP_SECURITY_API_KEY` if eval.yml is used).
+- [x] Add `HF_TOKEN` as a repo secret — **already done.** The 2026-09-14 `lighteval` run logs `Token is valid (permission: write)` / `Login successful`. It is *not* what blocks the HF-Jobs workflows; prepaid Jobs credit is (see below). `STEP_SECURITY_API_KEY` is likewise in place — harden-runner completes on every run.
 - [x] Fix anything evaluation surfaces — **repo-health pass landed 2026-09-16**: the
       unparseable `push-all-to-hub.py`, both `--env browsergym` contract violations (reward
       always 0.0, bare-string prompt), the 13 duplicated methods in `a2a_agent/`, two
@@ -80,7 +80,9 @@ for the full analysis (what / how / time / cost / suggestions).
 - [ ] Verify a catalog Docker image tag in `openenv-multi-catalog-training/run_servers.sh` live and lock it.
 - [ ] Replace `coding_env`'s placeholder task (`print(17 * 23)`) with a real coding-tool-use task.
 - [ ] Execute `a2a_agent/` against a live `a2a-sdk` install and confirm `TaskUpdater` method names.
-- [ ] HF Jobs currently returns `402 Payment Required` — five HF-Jobs workflows fail until payment + `HF_TOKEN` land.
+- [ ] **Add prepaid HF Jobs credit.** This is the sole remaining blocker on the four HF-Jobs workflows: `402 ... Pre-paid credit balance is insufficient`, confirmed in the 2026-09-14 `lighteval` job log after a successful login.
+- [ ] Redeploy `browsergym-space/` or keep the upstream default. `Nanthasit/browsergym-env` returns 404 (verified 2026-09-16); `train.py --env browsergym` now points at `openenv/browsergym_env`.
+- [ ] Push `sakthai-combined-v8` (or repoint `train-sakthai-1.5b-v2.py:88`). v8/v9/v11 were never created, and `train.yml` loads v8.
 
 ### Deferred / not in scope
 
