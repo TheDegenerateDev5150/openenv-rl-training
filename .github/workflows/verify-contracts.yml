@@ -11,6 +11,10 @@ permissions:
 
 # The only workflow in this repo that runs entirely in GH Actions.
 # Everything else dispatches to HF Jobs (needs HF_TOKEN + a paid HF Jobs plan).
+#
+# The workspace test suites under openenv-custom-training/ and
+# sakthai-agentic-eval-train/ used to exist without any job running them; the
+# root conftest.py stubs `openenv` so they collect on a CPU runner.
 
 jobs:
   verify:
@@ -32,8 +36,17 @@ jobs:
       - name: Install uv
         run: pip install uv
 
+      - name: ruff (syntax errors, undefined names, redefinitions)
+        run: uv run --with ruff ruff check --output-format=github .
+
       - name: verify_grpo_contract.py (CPU, no torch/trl required)
         run: python3 verify_grpo_contract.py
 
-      - name: test_browsergym_contract.py (mocks trl, needs datasets)
-        run: uv run --with datasets --with pytest pytest test_browsergym_contract.py -v
+      # One invocation on purpose: the suites share sys.modules, and running
+      # them separately hid a mock leak between them (see tests/conftest notes).
+      - name: pytest (contract + workspace suites)
+        run: |
+          uv run --with datasets --with pytest --with pydantic --with httpx \
+            pytest test_browsergym_contract.py \
+                   sakthai-agentic-eval-train/tests/ \
+                   openenv-custom-training/tests/ -v
