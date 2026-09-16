@@ -26,15 +26,16 @@
 [![⭐ Stars](https://img.shields.io/github/stars/beer-sakthai/openenv-rl-training?style=flat&logo=github)](https://github.com/beer-sakthai/openenv-rl-training/stargazers)
 [![📅 Last commit](https://img.shields.io/github/last-commit/beer-sakthai/openenv-rl-training/main?logo=git&logoColor=white)](https://github.com/beer-sakthai/openenv-rl-training/commits/main)
 
-> ## 📊 Live status — 2026-09-07
+> ## 📊 Live status — 2026-09-16
 >
 > | Area | Status | Current evidence |
 > |---|---|---|
-> | 🧪 **Contracts and security CI** | 🟢 Passing | Verify Contracts, CodeQL Advanced, OSSAR, and Auto Update PR Branches passed on `main` after the latest merge. |
+> | 🧪 **Contracts and security CI** | 🟢 Passing | Verify Contracts now runs ruff + 38 tests (was 2 files / 4 tests); CodeQL Advanced, OSSAR and Auto Update PR Branches pass on `main`. |
+> | 🐛 **Repo-health pass** | 🟢 Landed 2026-09-16 | One unparseable file, two silent GRPO contract violations, 13 duplicated methods from a bad merge, and two eval-script NameErrors fixed. See CLAUDE.md § *Resolved 2026-09-16*. |
+> | ⚙️ **Workflow hygiene** | 🟢 Fixed | `monitor.yml` no longer fails by design every Monday; `train.yml` no longer targets a nonexistent runner label; `manual.yml` (Hello World template) deleted. |
 > | 🤗 **HF authentication** | 🟢 Fixed and runner-tested | Lighteval authenticated successfully with `HF_TOKEN`; the remaining failure is HF Jobs billing, not login. |
 > | 💰 **HF Jobs evaluation** | 🟡 Credit blocked | Lighteval reached Hugging Face and returned `402 Payment Required` because prepaid Jobs credit is insufficient. |
-> | 🌿 **Branch state** | 🟡 Cleanup pending | `main` is the integration branch; a pre-existing `improve/push-all-to-hub` branch remains until the requested cleanup merge. |
-> | 🔀 **Open pull requests** | 🟢 Zero | No open pull requests are currently reported. |
+> | 🧹 **Lint debt** | 🟡 Scoped out | ~115 style findings (F541/F401/F841) remain, mostly in files pinned as immutable. The gate covers bugs only — see `.ruff.toml`. |
 
 ### 🤗 Model & dataset badges
 
@@ -103,12 +104,18 @@ the single source of truth for what has actually worked.
 
 ### 🟢 Verified contracts & CI
 
-- ✅ **`verify_grpo_contract.py`** — CPU-only reward-function + `GRPOConfig`
-  compatibility check. Passes on `main`.
-- ✅ **`test_browsergym_contract.py`** — 3 tests, mocks `trl`, requires `datasets`.
-  Run with `uv run --with datasets --with pytest pytest test_browsergym_contract.py`.
-- ⚙️ **`.github/workflows/verify-contracts.yml`** — runs both on every PR & push
-  to `main`. Free; the only workflow that runs inside GH Actions itself.
+- ✅ **`verify_grpo_contract.py`** — CPU-only check that drives `SimpleGuessEnv`
+  through real episodes (structural contract, a solved rollout, a rollout that
+  terminates at `MAX_ATTEMPTS`, an out-of-range guess rejected) plus the
+  `GRPOConfig` vLLM field names. Passes on `main`.
+- ✅ **`test_browsergym_contract.py`** — 11 tests, mocks `trl`, requires `datasets`.
+  Part of the 38-test CPU suite; run all three together, as CI does:
+  `uv run --with datasets --with pytest --with pydantic --with httpx pytest test_browsergym_contract.py sakthai-agentic-eval-train/tests/ openenv-custom-training/tests/`
+- 🧹 **`ruff`** (`.ruff.toml`) — narrow bug-only gate: syntax errors, undefined
+  names, redefinitions. Style rules are deliberately off; see the config header.
+- ⚙️ **`.github/workflows/verify-contracts.yml`** — runs ruff, the contract
+  script, and all 38 tests on every PR & push to `main`. Free; the only workflow
+  that runs inside GH Actions itself.
 - 🛡️ **`.github/workflows/codeql.yml`** & **`ossar.yml`** — advanced code-scanning
   for actions & Python; weekly + on-PR.
 
@@ -161,11 +168,18 @@ For the SFT half, see 📄 [`sakthai-sft-training/README.md`](sakthai-sft-traini
 ## ⚡ Running things locally (what actually works here)
 
 ```bash
-# 🟢 Passes; skips the TRL class-instantiation section when trl is absent
+# 🟢 Bug-only lint gate: syntax errors, undefined names, redefinitions
+uv run --with ruff ruff check .
+
+# 🟢 Drives SimpleGuessEnv through real episodes; skips the TRL section when trl is absent
 python3 verify_grpo_contract.py
 
-# 🟢 3 passed; mocks trl, needs datasets
-uv run --with datasets --with pytest pytest test_browsergym_contract.py
+# 🟢 38 passed — run the three suites in ONE invocation, as CI does: they share
+#    sys.modules, and splitting them hides mock leaks between the suites.
+uv run --with datasets --with pytest --with pydantic --with httpx \
+  pytest test_browsergym_contract.py \
+         sakthai-agentic-eval-train/tests/ \
+         openenv-custom-training/tests/
 ```
 
 Everything else needs a GPU box — this checkout has no `torch`/`trl`/`datasets`
