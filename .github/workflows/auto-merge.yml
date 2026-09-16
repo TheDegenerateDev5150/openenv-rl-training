@@ -3,13 +3,14 @@
 # Applying the `automerge` label to a pull request turns on GitHub's *native*
 # auto-merge for it. GitHub then performs the merge itself, but only once every
 # branch-protection requirement on `main` is satisfied: required checks green
-# **and** the approving review from someone other than the author that
-# docs/CONTRIBUTING.md requires. Removing the label turns auto-merge back off.
+# **and** whatever review the branch protection rules on `main` demand.
+# Removing the label turns auto-merge back off.
 #
 # This does not weaken the review policy and must not be made to. The label
 # means "merge this once it is allowed to merge" — not "merge this". Nothing
-# here approves a pull request and nothing here waives a check; see the
-# "Do not automate the approval" note in docs/CONTRIBUTING.md.
+# here approves a pull request and nothing here waives a check. Do not add an
+# approval step: the point of the label is to wait for branch protection, not
+# to satisfy it.
 #
 # Security note on `pull_request_target`: this trigger runs with a
 # repository-scoped token, so a workflow using it must never check out or
@@ -62,9 +63,11 @@ jobs:
         if: github.event.action != 'unlabeled' && github.event.pull_request.draft == false
         env:
           # Prefer the PAT. A merge attributed to the ambient GITHUB_TOKEN does
-          # not trigger the `push: main` workflows (CI, SonarCloud, Scorecard),
-          # and self-healing-ci.yml keys off CI's completion on `main`. Falls
+          # not trigger the `push: main` workflows — here that is
+          # verify-contracts.yml, codeql.yml and auto-update-prs.yml. Falls
           # back to GITHUB_TOKEN so this still works without the secret.
+          # (The SonarCloud, Scorecard and self-healing-ci.yml workflows this
+          # comment used to name do not exist in this repository.)
           GH_TOKEN: ${{ secrets.GH_PAT_FOR_ACTIONS || secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}

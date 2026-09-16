@@ -11,7 +11,6 @@
 [![⬆️ Auto Update PRs](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/auto-update-prs.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/auto-update-prs.yml)
 [![📊 Eval](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/eval.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/eval.yml)
 [![⚡ Lighteval](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/lighteval.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/lighteval.yml)
-[![✋ Manual](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/manual.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/manual.yml)
 [![⚖️ MCP Bench](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/mcp-bench.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/mcp-bench.yml)
 [![👀 Monitor](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/monitor.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/monitor.yml)
 [![📝 Summary](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/summary.yml/badge.svg?branch=main)](https://github.com/beer-sakthai/openenv-rl-training/actions/workflows/summary.yml)
