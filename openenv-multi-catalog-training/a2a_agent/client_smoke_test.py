@@ -13,22 +13,10 @@ import uuid
 
 import httpx
 from a2a.client import A2ACardResolver, Client
-from a2a.types import Message, SendMessageRequest
-
-
-async def send(client: Client, context_id: str | None, task_id: str | None, text: str, metadata=None):
-    request = SendMessageRequest(
-        id=str(uuid.uuid4()),
-        message=Message(
-            text=text,
-            metadata=metadata,
-        )
-    )
-from a2a.client import A2ACardResolver, Client as A2AClient
 from a2a.types import Message, Part, SendMessageRequest
 
 
-async def send(client: A2AClient, context_id: str | None, task_id: str | None, text: str, metadata=None):
+async def send(client: Client, context_id: str | None, task_id: str | None, text: str, metadata=None):
     message = Message(
         role="user",
         parts=[Part(text=text)],

@@ -1,7 +1,15 @@
+# Weekly snapshot of the Nanthasit Hub models, written to the run's job summary.
+#
+# This used to end with `core.setFailed('Manual check required')` guarded by
+# `if: always()`, so a scheduled workflow went red every Monday by design. A
+# permanently-red badge trains everyone to ignore red badges, which is exactly
+# what you do not want on a repo whose other five workflows fail on billing.
+# The report is informational, so it is published as a job summary and the run
+# passes.
 name: Weekly HF Monitor
 on:
   schedule:
-    - cron: "0 8 * * 1"  # Every Monday 8AM
+    - cron: "0 8 * * 1"  # Every Monday 8AM UTC
   workflow_dispatch:
 
 permissions:
@@ -10,6 +18,7 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Harden the runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -22,16 +31,26 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install huggingface_hub
-      - run: |
-          python -c "
+
+      - name: Report Hub model stats
+        env:
+          # Public listing works unauthenticated; the token just raises the
+          # rate limit and reveals private repos when it is configured.
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import os
           from huggingface_hub import HfApi
-          api = HfApi()
-          print('| Model | Downloads | Likes |')
-          print('|---|---|---|')
-          for m in api.list_models(author='Nanthasit', sort='downloads', direction=-1):
-            print(f'| {m.modelId.split(\"/\")[-1]} | {m.downloads} | {m.likes} |')
-          "
-      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        if: always()
-        with:
-          script: core.setFailed('Manual check required')
+
+          api = HfApi(token=os.environ.get("HF_TOKEN") or None)
+          print("## Nanthasit Hub models\n")
+          print("| Model | Downloads | Likes |")
+          print("|---|---:|---:|")
+          rows = 0
+          for m in api.list_models(author="Nanthasit", sort="downloads", direction=-1):
+              name = m.modelId.split("/")[-1]
+              print(f"| {name} | {m.downloads} | {m.likes} |")
+              rows += 1
+          if not rows:
+              print("| _no models returned_ | | |")
+          PY

@@ -1,26 +1,25 @@
+# CPU dev/test toolchain for THIS CHECKOUT ONLY — what `verify-contracts.yml`
+# installs to run the contract checks and the workspace test suites.
+#
+# This is deliberately NOT an install manifest for the pipeline. The repo is
+# five independent workspaces with incompatible pinsets (the SFT half pins
+# TRL 0.19.1 / transformers 5.14.1; the RL half needs transformers>=5.2.0 and
+# current TRL), and unifying them in one file produces a set that cannot
+# resolve. Runtime dependencies live where they are used:
+#
+#   openenv-custom-training/requirements.txt          openenv, trl, vllm, ...
+#   openenv-multi-catalog-training/requirements.txt   the 8 catalog envs
+#   openenv-multi-catalog-training/a2a_agent/requirements.txt   a2a-sdk, ...
+#   every HF Jobs script                              PEP 723 inline header
+#
+# It previously carried 26 lines / 18 unique entries — httpx three times,
+# torch/transformers/peft/datasets/pytest/a2a-sdk twice each — and mixed
+# unpinned torch/trl/vllm/openenv in with the test tools, contradicting the
+# pinned versions in openenv-custom-training/requirements.txt. Dependabot
+# points its root `pip` entry at this file, so that drift was being actively
+# maintained.
 datasets
-httpx
-a2a-sdk
-pytest
-black
-isort
-flake8
-pytest
-datasets
-httpx
-transformers
-torch
-peft
-transformers
-accelerate
-huggingface_hub
-peft
-torch
 httpx
 pydantic
-tenacity
-a2a-sdk
-openenv==0.4.1
-trl
-vllm
-jmespath
+pytest
+ruff

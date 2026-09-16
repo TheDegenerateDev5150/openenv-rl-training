@@ -47,47 +47,161 @@ def _bool_env(name: str, default: bool = False) -> bool:
     return v.strip().lower() in ("1", "true", "yes", "on")
 
 
-def _make_browsergym_factory(task_name: str, space_url: str):
-    """Build a GRPOTrainer-compatible environment factory for BrowserGym."""
+# Episodes are capped so a policy that never solves the task still terminates
+# and the group trains on a clean 0.0 rather than looping (repo convention;
+# see env_simple_task.MAX_ATTEMPTS and sandbox_env.STEP_LIMIT).
+BROWSERGYM_STEP_LIMIT = 30
 
-    def factory():
+BROWSERGYM_PROMPT = (
+    "You are a web navigation agent. Complete the task shown in the browser. "
+    "Call the run_action(action) tool with one BrowserGym action per call — "
+    "click(), fill(), goto(), press(), or scroll(). Observe the page carefully "
+    "and act step by step until the task is done."
+)
+
+
+def _obs_text(observation) -> str:
+    """Best-effort render of a BrowserGym observation as the model's tool result.
+
+    NOT VERIFIED against a live `browsergym_env` install (see
+    _BrowserGymTaskEnv's docstring) — the field order below is a preference
+    list, not a checked schema.
+    """
+    for field in ("text", "observation", "result", "page", "axtree", "dom"):
+        value = getattr(observation, field, None)
+        if isinstance(value, str) and value:
+            return value
+    return str(observation)
+
+
+class _BrowserGymTaskEnv:
+    """TRL-facing wrapper around one BrowserGym OpenEnv session.
+
+    Mirrors the Tier B shape in `agent_tools/wrapper.py`: hold a client,
+    translate a named tool call into `client.step(...)`, and keep episode state
+    on `self` so the reward function can read `env.reward` back off the
+    instance after the episode. The server owns the verdict; this forwards it.
+
+    Instances are built by the closure `_make_browsergym_factory` returns, so
+    the per-run task name and Space URL arrive without `__init__` taking
+    arguments — TRL calls the factory with none.
+
+    **Written, not run.** The Space at `Nanthasit/browsergym-env` is live, but
+    this wrapper has not been executed against it (no GPU/network in the
+    checkout where it was written). The client surface used here — `.reset()` /
+    `.step()` returning a `StepResult` with `.observation`, `.reward`, `.done`
+    — is the OpenEnv `EnvClient` contract that `agent_tools/client.py`
+    documents and that the Space card's "POST /step — returns observation +
+    reward" implies. The BrowserGym *action* type is the unverified part:
+    `BrowserGymAction(action=...)` is assumed below. Diff it against the
+    installed `browsergym_env` package before spending GPU time.
+    """
+
+    def __init__(self, task_name: str, space_url: str):
+        self._task_name = task_name
+        self._space_url = space_url
+        self._client = None
+        self._steps = 0
+        self.reward = 0.0
+        self.done = False
+
+    def _open(self):
         try:
             from browsergym_env import BrowserGymEnv
-
-            return BrowserGymEnv(
-                base_url=space_url,
-                environment={
-                    "BROWSERGYM_BENCHMARK": "miniwob",
-                    "BROWSERGYM_TASK_NAME": task_name,
-                    "BROWSERGYM_HEADLESS": "true",
-                },
-            )
         except ImportError:
             raise ImportError(
                 "browsergym_env not installed. "
                 "Run: pip install git+https://github.com/huggingface/OpenEnv.git"
+                "#subdirectory=envs/browsergym_env"
             )
+        return BrowserGymEnv(
+            base_url=self._space_url,
+            environment={
+                "BROWSERGYM_BENCHMARK": "miniwob",
+                "BROWSERGYM_TASK_NAME": self._task_name,
+                "BROWSERGYM_HEADLESS": "true",
+            },
+        )
+
+    def reset(self, **kwargs) -> str | None:
+        self._steps = 0
+        self.reward = 0.0
+        self.done = False
+        self._client = self._open()
+        result = self._client.reset()
+        return _obs_text(getattr(result, "observation", result))
+
+    # -- tools ---------------------------------------------------------------
+
+    def run_action(self, action: str) -> str:
+        """Perform one BrowserGym action in the browser and see the new page.
+
+        One action per call. Use the BrowserGym action syntax — for example
+        `click('a12')`, `fill('a5', 'hello')`, `press('a5', 'Enter')`,
+        `goto('http://…')`, or `scroll(0, 200)`. Element ids come from the
+        page description in the previous observation. Keep acting until the
+        page shows the task is complete.
+
+        Args:
+            action: a single BrowserGym action call, e.g. "click('a12')".
+        """
+        if self.done:
+            raise ValueError("Episode already ended.")
+        from browsergym_env import BrowserGymAction
+
+        result = self._client.step(BrowserGymAction(action=action))
+        self._steps += 1
+        observation = getattr(result, "observation", result)
+        # Reward/done are mirrored at the StepResult top level and on the
+        # observation; prefer the top level, same as agent_tools/client.py.
+        reward = getattr(result, "reward", None)
+        if reward is None:
+            reward = getattr(observation, "reward", 0.0)
+        self.reward = float(reward or 0.0)
+        self.done = bool(
+            getattr(result, "done", None) or getattr(observation, "done", False)
+        )
+        text = _obs_text(observation)
+        if not self.done and self._steps >= BROWSERGYM_STEP_LIMIT:
+            self.done = True
+            text = f"{text}\n\nSTEP LIMIT REACHED ({BROWSERGYM_STEP_LIMIT})."
+        return text
+
+
+def _make_browsergym_factory(task_name: str, space_url: str):
+    """Build a GRPOTrainer-compatible environment factory for BrowserGym.
+
+    TRL instantiates one environment per generation slot by calling this with
+    no arguments, so the task name and Space URL ride in on the closure.
+    """
+
+    def factory():
+        return _BrowserGymTaskEnv(task_name, space_url)
 
     return factory
 
 
-def _browsergym_reward(completions, **kwargs):
-    """Reward function: pass BrowserGym step reward back to GRPO."""
-    env_outputs = kwargs.get("env_outputs", [])
-    if not env_outputs:
-        return [0.0] * len(completions)
-    return [float(out.get("reward", 0.0)) for out in env_outputs]
+def _browsergym_reward(environments, **kwargs):
+    """Forward the BrowserGym server's episode reward back to GRPO.
+
+    Signature is the repo-wide contract — `reward_func(environments, **kwargs)`
+    reading `env.reward` off the instance after the episode — not
+    `(completions, ...)`. Outcome-based: the server judges, this forwards.
+    """
+    return [float(getattr(env, "reward", 0.0) or 0.0) for env in environments]
 
 
 def _browsergym_dataset(n_episodes: int):
-    """Minimal prompt dataset for BrowserGym web navigation tasks."""
+    """Minimal prompt dataset for BrowserGym web navigation tasks.
+
+    `prompt` is conversational (a list of {"role", "content"} dicts): TRL's
+    tool-calling GRPO does `prompt[-1]["content"]`, and a bare string raises
+    `TypeError: string indices must be integers`.
+    """
     prompts = [
-        {
-            "prompt": "You are a web navigation agent. Complete the task shown in the browser. "
-            "Use click(), fill(), goto(), press(), scroll() actions. "
-            "Observe the page carefully and act step by step."
-        }
-    ] * n_episodes
+        {"prompt": [{"role": "user", "content": BROWSERGYM_PROMPT}]}
+        for _ in range(n_episodes)
+    ]
     return Dataset.from_list(prompts)
 
 

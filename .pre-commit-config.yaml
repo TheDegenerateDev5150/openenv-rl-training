@@ -1,4 +1,11 @@
 repos:
+# Bug-only ruleset (see .ruff.toml): syntax errors, undefined names, and
+# redefinitions. Style rules stay off — the cycle-100-v*.py snapshots are
+# pinned artifacts and must not be reformatted.
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.16.7   # the version .ruff.toml was validated against
+  hooks:
+  - id: ruff-check   # `ruff` is a legacy alias at this rev
 - repo: https://github.com/gitleaks/gitleaks
   rev: v8.30.1
   hooks:

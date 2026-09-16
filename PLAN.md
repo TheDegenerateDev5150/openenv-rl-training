@@ -58,7 +58,16 @@ for the full analysis (what / how / time / cost / suggestions).
 ### Phase 5 — Improvements (drive from evaluation results)
 
 - [ ] Add `HF_TOKEN` (and `STEP_SECURITY_API_KEY` referenced by `eval.yml`) as repo secrets — unblocks the 5 HF-Jobs workflows. **User action:** `gh secret set HF_TOKEN --repo beer-sakthai/openenv-rl-training` (and `STEP_SECURITY_API_KEY` if eval.yml is used).
-- [ ] Fix anything evaluation surfaces (report findings in PR/comments, not silent edits).
+- [x] Fix anything evaluation surfaces — **repo-health pass landed 2026-09-16**: the
+      unparseable `push-all-to-hub.py`, both `--env browsergym` contract violations (reward
+      always 0.0, bare-string prompt), the 13 duplicated methods in `a2a_agent/`, two
+      eval-script NameErrors, a ruff bug-gate, and the 27 workspace tests no CI job ran.
+      Full list in CLAUDE.md § *Resolved 2026-09-16*.
+- [ ] Widen the ruff select list to the style rules (F541/F401/F841, ~115 findings) —
+      needs a cleanup pass on the files that are safe to edit; the `cycle-100-v*.py`
+      snapshots must not be reformatted.
+- [ ] Repoint `augmented-output/push-augmented.py` at the Hub so the committed `.jsonl`
+      payloads under `augmented-output/` and `safety-quality-fixes/` can be removed.
 - [ ] Extend `monitor.yml` or add `bench-v3-publish.yml` for weekly `sakthai-bench-v3` regeneration (depends on `HF_TOKEN`).
 - [ ] Translate a subset of `.opencode/skills/` into Claude Code skills (`.claude/skills/*/SKILL.md`) — `cycle-workflow`, `data-augmentation`, `training`, `eval`, `troubleshooting` first. Separate PR.
 

@@ -1,26 +1,57 @@
+# Dispatches 1.5B SFT training to HF Jobs. Manual only: HF Jobs is paid, so
+# this never fires on a push.
+#
+# It previously declared `runs-on: hf-jobs-h200` — not a runner label this
+# repository has, so every run queued until it timed out — and then called
+# `uv run` without installing uv or Python. Neither problem could surface
+# while the job never started. It now matches the shape of the other HF Jobs
+# workflows (lighteval.yml, eval.yml): an ubuntu runner authenticates and
+# submits the job with `hf jobs uv run`, which is also what CLAUDE.md
+# describes this workflow as doing.
+#
+# Auto-fire disabled by default (2026-08-21 consolidation). To restore
+# push-on-merge, re-add:
+#   push:
+#     branches: [main]
+#     paths: [sakthai-sft-training/train-sakthai-1.5b-v2.py]
 name: Train Plus 1.5B
 on:
   workflow_dispatch:
-  # Auto-fire disabled by default (2026-08-21 consolidation): HF Jobs is paid,
-  # so this workflow runs on demand only. To restore push-on-merge, re-add:
-  # push:
-  #   branches: [main]
-  #   paths: [sakthai-sft-training/train-sakthai-1.5b-v2.py]
 
 permissions:
   contents: read
 
 jobs:
   train:
-    runs-on: hf-jobs-h200
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # submission only; the job itself runs on HF.
     steps:
-      - name: Harden the runner (Audit all outbound calls)
+      - name: Harden the runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
-          egress-policy: audit
+          use-policy-store: true
+          api-key: ${{ secrets.STEP_SECURITY_API_KEY }}
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: uv run python sakthai-sft-training/train-sakthai-1.5b-v2.py
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.11"
+      - run: pip install huggingface_hub
+
+      - name: Authenticate Hugging Face CLI
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::The HF_TOKEN repository secret is not configured or is unavailable to this workflow."
+            exit 1
+          fi
+          hf auth login --token "$HF_TOKEN"
+
+      - name: Submit training job
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          hf jobs uv run --flavor h200 --timeout 1h \
+            --secrets HF_TOKEN \
+            sakthai-sft-training/train-sakthai-1.5b-v2.py

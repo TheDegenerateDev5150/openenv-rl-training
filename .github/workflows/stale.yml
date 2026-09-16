@@ -1,18 +1,23 @@
-# This workflow warns and then closes issues and PRs that have had no activity for a specified amount of time.
+# Marks long-dormant issues and PRs stale, then closes them.
 #
-# You can adjust the behavior by modifying this file.
-# For more information, see:
-# https://github.com/actions/stale
+# The messages below were previously the literal placeholders from GitHub's
+# starter template ("Stale issue message" / "Stale pull request message"), and
+# the timings were whatever actions/stale defaults to. Both are now explicit —
+# a bot posting placeholder text at a contributor is worse than no bot.
 name: Mark stale issues and pull requests
 
 on:
   schedule:
-  - cron: '28 11 * * *'
+    - cron: '28 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   stale:
-
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       issues: write
       pull-requests: write
@@ -27,7 +32,31 @@ jobs:
     - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11.0.0
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'Stale issue message'
-        stale-pr-message: 'Stale pull request message'
+
+        days-before-stale: 60
+        days-before-close: 14
+
         stale-issue-label: 'no-issue-activity'
         stale-pr-label: 'no-pr-activity'
+
+        stale-issue-message: >
+          This issue has had no activity for 60 days, so it is being marked
+          stale. Comment if it is still relevant and the label will be removed;
+          otherwise it will close in 14 days. Closing is not a judgement on the
+          issue — reopen it any time.
+        stale-pr-message: >
+          This pull request has had no activity for 60 days, so it is being
+          marked stale. Push a commit or comment if it is still in progress and
+          the label will be removed; otherwise it will close in 14 days. A
+          closed PR can be reopened whenever you pick the work back up.
+
+        close-issue-message: >
+          Closing after 14 further days without activity. Reopen it whenever
+          the work resumes.
+        close-pr-message: >
+          Closing after 14 further days without activity. Reopen it whenever
+          the work resumes.
+
+        # Long-running tracked work should not be swept up by a timer.
+        exempt-issue-labels: 'pinned,security,keep'
+        exempt-pr-labels: 'pinned,security,keep,automerge'
