@@ -3,6 +3,7 @@
 Loads raw test.jsonl directly (bypasses Hub metadata bug).
 No Dataset/Arrow — works on raw list of dicts.
 """
+import collections
 import json
 import re
 import time

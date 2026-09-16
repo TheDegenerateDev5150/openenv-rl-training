@@ -495,9 +495,9 @@ def _process_eval_rows(raws):
             if pp is not None:
                 partial.append(pp)
 
-    del m
-    gc.collect()
-    torch.cuda.empty_cache()
+    # Model teardown belongs to evaluate(), which owns `m`; this function only
+    # scores already-generated rows. The stray copy left here by the refactor
+    # raised NameError after the whole eval loop had run.
     return sel, arg, strict, ho, dead, partial, slices, all_errors
 
 
