@@ -2,7 +2,8 @@
 # /// script
 # dependencies = ["datasets", "huggingface_hub"]
 # ///
-"""Push all augmented datasets to Hugging Face Hub as sakthai-combined-v8.
+"""Push all augmented datasets to Hugging Face Hub as sakthai-combined-v8."""
+
 from huggingface_hub import HfApi
 
 api = HfApi()
