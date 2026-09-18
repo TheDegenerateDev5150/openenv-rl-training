@@ -52,6 +52,7 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          hf jobs uv run --flavor h200 --timeout 1h \
-            --secrets HF_TOKEN \
-            sakthai-sft-training/train-sakthai-1.5b-v2.py
+          .github/scripts/hf-jobs-submit.sh \
+            hf jobs uv run --flavor h200 --timeout 1h \
+              --secrets HF_TOKEN \
+              sakthai-sft-training/train-sakthai-1.5b-v2.py

@@ -16,6 +16,9 @@ jobs:
           use-policy-store: true
           api-key: ${{ secrets.STEP_SECURITY_API_KEY }}
 
+      # Added with the hf-jobs-submit wrapper: this job previously submitted a
+      # script by URL and so never needed the repository on disk.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: pip install huggingface_hub
       - name: Authenticate Hugging Face CLI
         env:
@@ -28,10 +31,11 @@ jobs:
           hf auth login --token "$HF_TOKEN"
 
       - run: |
-          hf jobs uv run --flavor h200 --timeout 30m \
-            -e SAK_MODELS=Nanthasit/sakthai-plus-1.5b \
-            -e SAK_BENCH=Nanthasit/sakthai-bench-v2 \
-            --secrets HF_TOKEN \
-            https://huggingface.co/datasets/Nanthasit/sakthai-bench-v2/resolve/main/eval_bench.py
+          .github/scripts/hf-jobs-submit.sh \
+            hf jobs uv run --flavor h200 --timeout 30m \
+              -e SAK_MODELS=Nanthasit/sakthai-plus-1.5b \
+              -e SAK_BENCH=Nanthasit/sakthai-bench-v2 \
+              --secrets HF_TOKEN \
+              https://huggingface.co/datasets/Nanthasit/sakthai-bench-v2/resolve/main/eval_bench.py
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}

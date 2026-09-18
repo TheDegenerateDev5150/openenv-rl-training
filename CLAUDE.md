@@ -390,8 +390,12 @@ The prose in this repo is unusually careful, and that is deliberate. Match it:
 - HF Jobs returns `402 Payment Required` on this account. **Credit is the only blocker** —
   `HF_TOKEN` IS configured as a repo secret and valid: the 2026-09-14 `lighteval` run logs
   `Token is valid (permission: write)` and `Login successful`, then fails with
-  `402 ... Pre-paid credit balance is insufficient`. The four HF-Jobs workflows fail until
-  credit is added. `verify-contracts.yml` and `hf-no-cost-checks.yml` run regardless.
+  `402 ... Pre-paid credit balance is insufficient`. The four HF-Jobs workflows cannot
+  dispatch until credit is added, but they no longer go red for it: each routes its
+  `hf jobs` call through `.github/scripts/hf-jobs-submit.sh` (added 2026-09-18), which
+  reports a 402 as a skip — warning annotation, job summary, exit 0 — and lets every other
+  failure through untouched. A red run on one of them therefore means a real problem, not
+  an empty balance. `verify-contracts.yml` and `hf-no-cost-checks.yml` run regardless.
 - `--env browsergym`'s wrapper (`_BrowserGymTaskEnv` in `openenv-custom-training/train.py`)
   is **written, not run**. `BrowserGymAction(action=...)` and the observation text field
   were inferred, not checked against an installed `browsergym_env`. Confirm both before a
