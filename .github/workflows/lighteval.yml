@@ -29,9 +29,10 @@ jobs:
           hf auth login --token "$HF_TOKEN"
 
       - run: |
-          hf jobs uv run --flavor h200 --timeout 1h \
-            -e TASKS=mmlu:0,gsm8k:0,hellaswag:0,winogrande:0 \
-            --secrets HF_TOKEN \
-            sakthai-sft-training/eval-light.py
+          .github/scripts/hf-jobs-submit.sh \
+            hf jobs uv run --flavor h200 --timeout 1h \
+              -e TASKS=mmlu:0,gsm8k:0,hellaswag:0,winogrande:0 \
+              --secrets HF_TOKEN \
+              sakthai-sft-training/eval-light.py
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}

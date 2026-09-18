@@ -47,7 +47,12 @@ jobs:
           print("| Model | Downloads | Likes |")
           print("|---|---:|---:|")
           rows = 0
-          for m in api.list_models(author="Nanthasit", sort="downloads", direction=-1):
+          # No `direction=` here: huggingface_hub 1.x removed the argument, and the
+          # runner installs the latest (1.31.0 as of 2026-09-18), so passing it
+          # raised `TypeError: HfApi.list_models() got an unexpected keyword
+          # argument 'direction'` and failed the job. `sort="downloads"` already
+          # returns descending order.
+          for m in api.list_models(author="Nanthasit", sort="downloads"):
               name = m.modelId.split("/")[-1]
               print(f"| {name} | {m.downloads} | {m.likes} |")
               rows += 1
